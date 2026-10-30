@@ -1,0 +1,6 @@
+{
+  "name": "SpendWise",
+  "description": "Smart expense and grant tracker with real-time analytics, category breakdown, and bioscience laboratory budgeting.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
