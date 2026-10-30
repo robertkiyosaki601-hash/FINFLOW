@@ -1,4 +1,3 @@
-
 name: Build FinFlow APK
 
 on:
@@ -7,6 +6,9 @@ on:
     paths:
       - "*.zip"
       - ".github/workflows/android.yml"
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -25,6 +27,20 @@ jobs:
           fi
           mkdir -p project
           unzip -o "$ZIP" -d project
+
+      - name: Save source files to GitHub
+        run: |
+          mkdir -p source
+          cp -a project/. source/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add source
+          if git diff --cached --quiet; then
+            echo "No source changes"
+          else
+            git commit -m "Add extracted FinFlow source"
+            git push
+          fi
 
       - name: Set up Java
         uses: actions/setup-java@v4
