@@ -1,3 +1,37 @@
+
+name: Build FinFlow APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "*.zip"
+      - ".github/workflows/android.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract FinFlow ZIP
+        run: |
+          ZIP=$(find . -maxdepth 1 -type f -name "*.zip" -print -quit)
+          if [ -z "$ZIP" ]; then
+            echo "FinFlow ZIP not found"
+            exit 1
+          fi
+          mkdir -p project
+          unzip -o "$ZIP" -d project
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
       - name: Generate Debug Keystore
         run: |
           keytool -genkeypair \
@@ -13,69 +47,15 @@
 
       - name: Build APK
         run: |
+          cd project
           PROJECT_DIR=$(find . -name settings.gradle.kts -o -name settings.gradle | head -n 1 | xargs dirname)
-          cp "$GITHUB_WORKSPACE/debug.keystore" "$PROJECT_DIR/"
           cd "$PROJECT_DIR"
+          cp "$GITHUB_WORKSPACE/debug.keystore" .
           gradle assembleDebug
-name: Build FinFlow APK
 
-on:
-  workflow_dispatch:
-  push:
-    paths:
-      - "*.zip"
-      - ".github/workflows/android.yml"
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    env:
-      ANDROID_HOME: /usr/local/lib/android/sdk
-      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Extract FinFlow project
-        run: |
-          ZIP=$(find . -maxdepth 1 -name "*.zip" -print -quit)
-          if [ -z "$ZIP" ]; then
-            echo "Project ZIP not found"
-            exit 1
-          fi
-          unzip -o "$ZIP" -d .
-
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "17"
-
-      - name: Set up Android SDK
-        run: |
-          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
-          echo "$ANDROID_HOME/build-tools/36.0.0" >> "$GITHUB_PATH"
-          SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | head -n 1)
-          if [ -z "$SDKMANAGER" ]; then
-            echo "sdkmanager not found"
-            exit 1
-          fi
-          yes | "$SDKMANAGER" --licenses || true
-          "$SDKMANAGER" "platform-tools" "platforms;android-36" "build-tools;36.0.0"
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: "9.3.1"
-
-      - name: Build Debug APK
-        run: gradle assembleDebug
-
-      - name: Upload APK
+      - name: Upload FinFlow APK
         uses: actions/upload-artifact@v4
         with:
           name: FinFlow-APK
-          path: app/build/outputs/apk/debug/*.apk
+          path: project/**/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
