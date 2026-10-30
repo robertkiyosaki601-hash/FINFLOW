@@ -1,4 +1,22 @@
+      - name: Generate Debug Keystore
+        run: |
+          keytool -genkeypair \
+            -v \
+            -keystore "$GITHUB_WORKSPACE/debug.keystore" \
+            -storepass android \
+            -alias androiddebugkey \
+            -keypass android \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
 
+      - name: Build APK
+        run: |
+          PROJECT_DIR=$(find . -name settings.gradle.kts -o -name settings.gradle | head -n 1 | xargs dirname)
+          cp "$GITHUB_WORKSPACE/debug.keystore" "$PROJECT_DIR/"
+          cd "$PROJECT_DIR"
+          gradle assembleDebug
 name: Build FinFlow APK
 
 on:
